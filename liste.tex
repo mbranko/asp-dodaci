@@ -1,0 +1,394 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{ifxetex}
+\RequireXeTeX
+
+\usepackage[a4paper,tmargin=1in,bmargin=1.3in,lmargin=1in,rmargin=1in]{geometry}
+
+% bookmarks in PDF
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,bookmarksopen=true]{hyperref}
+\usepackage[depth=3]{bookmark}
+% open file with zoom to page width
+\hypersetup{pdfstartview={FitH top}}
+
+% math package
+\usepackage{amsmath}
+
+% customizing fonts
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\setsansfont{Fira Sans}
+\setmonofont{JetBrains Mono NL}[Scale=0.8]
+\setmainfont{Dijakritika}
+\titleformat*{\section}{\Large\bfseries\sffamily}
+\titleformat*{\subsection}{\bfseries\sffamily}
+
+% image handling
+\usepackage{graphicx}
+\usepackage{forest}
+\usepackage{tikz}
+\usetikzlibrary{arrows,petri,topaths,arrows.meta,automata,calc,shapes.multipart,chains,shapes.gates.logic.US,matrix}
+\usepackage{tkz-berge}
+\usepackage[position=top]{subfig}
+\tikzstyle{branch}=[fill,shape=circle,minimum size=3pt,inner sep=0pt]
+
+% syntax highligting
+\usepackage{minted}
+
+% custom headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{ASP primeri}
+\cfoot{Page \thepage}
+\setlength{\headheight}{46pt}
+
+\frenchspacing
+
+\begin{document}
+
+\section{Jednostruko spegnute liste}
+
+Za sve zadatke u ovom odeljku, osim ako nije drugačije navedeno, svaki čvor ima
+dva atributa -- polje sa podatkom i polje sa pokazivačem (adresom) na sledeći
+čvor u listi. Polje za sledeći kod poslednjeg elementa ima vrednost
+\texttt{None}. Čvor može biti predstavljen sledećom klasom:
+
+\begin{minted}[frame=lines]{python}
+class ListNode:
+    def __init__(self, data=0, next_node=None)
+        self.data = data 
+        self.next = next_node  
+\end{minted}  
+
+Osnovne operacije nad listom -- pretraga, dodavanje i uklanjanje -- mogu se
+implementirati na sledeći način.
+
+\begin{minted}[frame=lines]{python}
+def search_list(L, key): 
+    while L and L.data != key:
+        L = L.next
+    # If key was not present in the List, L will have become null 
+    return L
+
+
+def insert_after(node, new_node):
+    new_node.next = node.next
+    node.next = new_node
+
+
+# Delete the node past this one. Assume node is not a tail 
+def delete_after(node):
+    node.next = node.next.next
+\end{minted}  
+
+Ispod haube, Pajton tip \texttt{list} se tipično implementira kao niz sa
+automatskom promenom veličine. Ovaj odeljak se bavi jednostruko i dvostruko
+spregnutim listama koje nemaju standardni tip u Pajtonu. Definisaćemo sopstvene
+tipove koje predstavljaju ovakve liste. Neke od operacije nad listama obuhvataju
+vraćanje glave ili repa, dodavanje elementa na početak ili kraj liste, vraćanje
+elementa koji se nalazi na početku ili kraju, uklanjanje sa početka ili kraja,
+ili bilo kog elementa liste.
+
+\subsection{Obrtanje podliste}
+
+Ovaj problem se bavi obrtanjem podliste u okviru liste. Slike
+\ref{fig:reversesublist1} i \ref{fig:reversesublist2} predstavljaju primer ove
+operacije.
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[list/.style={
+        rectangle split, 
+        rectangle split parts=2,
+        draw, 
+        rectangle split horizontal,        
+        prefix after command={\pgfextra{\tikzset{every label/.style={
+          gray,
+          below,
+          yshift=-27,
+          scale=0.6}}}}
+      }, 
+      >=stealth, 
+      start chain, 
+      pin edge = {
+        Straight Barb-, 
+        shorten <=1mm,semithick
+      }
+    ]
+    \node[list,on chain,pin=180:L,label=0x2700] (A) {11};
+    \node[list,on chain,label=0x2430] (B) {3};
+    \node[list,on chain,label=0x1240] (C) {5};
+    \node[list,on chain,label=0x1830] (D) {7};
+    \node[list,on chain,label=0x1000] (E) {2};
+    \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
+    \draw[*->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
+    \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+    \draw[*->] let \p1 = (D.two), \p2 = (D.center) in (\x1,\y2) -- (E);
+  \end{tikzpicture}
+  \caption{Početno stanje liste}
+  \label{fig:reversesublist1}
+\end{figure}
+
+\begin{figure}[htb]
+  \centering
+  \begin{tikzpicture}[list/.style={
+        rectangle split, 
+        rectangle split parts=2,
+        draw, 
+        rectangle split horizontal,        
+        prefix after command={\pgfextra{\tikzset{every label/.style={
+          gray,
+          below,
+          yshift=-27,
+          scale=0.6}}}}
+      }, 
+      >=stealth, 
+      start chain, 
+      pin edge = {
+        Straight Barb-, 
+        shorten <=1mm,semithick
+      }
+    ]
+    \node[list,on chain,pin=180:L,label=0x2700] (A) {11};
+    \node[list,on chain,label=0x1830] (D) {7};
+    \node[list,on chain,label=0x1240] (C) {5};
+    \node[list,on chain,label=0x2430] (B) {3};
+    \node[list,on chain,label=0x1000] (E) {2};
+    \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (D);
+    \draw[*->] let \p1 = (D.two), \p2 = (B.center) in (\x1,\y2) -- (C);
+    \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (B);
+    \draw[*->] let \p1 = (B.two), \p2 = (D.center) in (\x1,\y2) -- (E);
+  \end{tikzpicture}
+  \caption{Lista sa obrnutom podlistom}
+  \label{fig:reversesublist2}
+\end{figure}
+
+\textbf{Zadatak:} Napisati program koji dobija jednostruko spregnutu listu $L$ i
+dva cela broja $s$ i $f$ kao argumente i obrće redosled čvorova u listi počevši
+od $s$-tog čvora do $f$-tog čvora, uključivo. Čvorovi su numerisani počevši od
+1, tj. glava liste ima redni broj 1. Nije dozvoljeno zauzimanje memorije za
+dodatne čvorove.
+
+\textbf{Savet:} Fokusirajte se na pokazivače na sledeći čvor koje treba
+ažurirati.
+
+\textbf{Rešenje:} Direktno rešenje je da se izdvoji podlista, obrne joj se
+redosled, i vrati se nalaz u polaznu listu. Nedostatak ovog pristupa je da su
+potrebna dva prolaska kroz podlistu.
+
+Operacija se može izvesti u jednom prolazu kombinovanjem identifikacije podliste
+sa njenim iteriranjem. Identifikovaćemo početak podliste iteriranjem kroz
+čvorove do $s$-tog čvora. Kada dođemo do $s$-tog čvora, započinjemo obrtanje i
+nastavljamo sa brojanjem. Kada dođemo do $f$-tog čvora, zaustavljamo obrtanje i
+vezujemo obrnutu podlistu sa ostatkom početne liste.
+
+\begin{minted}[frame=lines]{python}
+def reverse_sublist(L, start, finish): 
+    dummy_head = sublist_head = ListNode(0, L) 
+    for _ in range(1, start):
+        sublist_head = sublist_head.next
+
+    # Reverses sublist
+    sublist_iter = sublist_head.next 
+    for _ in range(finish - start):
+        temp = sublist_iter.next
+        sublist_iter.next, temp.next, sublist_head.next = temp.next, sublist_head.next, temp
+    return dummy_head.next  
+\end{minted}  
+
+Vremenska složenost zavisi od potrage za $f$-tim čvorom, tj. $O(f)$.
+
+\textbf{Varijanta:} Napisati funkciju koja obrće jednostruko povezanu listu.
+Operacija može da ima na raspolaganju samo konstantni dodatni memorijski prostor
+($O(1)$).
+
+\textbf{Varijanta:} Napisati program koji prima jednostruko spregnutu listu $L$
+i nenegativni ceo broj $k$ i obrće listu po $k$ čvorova odjednom. Ako ukupan
+broj čvorova u listi $n$ nije umnožak $k$, treba ostaviti poslednjih $n\mod k$
+čvorova nepromenjenih. Ne treba menjati podatke koji se čuvaju u čvorovima.
+
+\subsection{Test preklapanja listi}
+
+Given two singly linked lists there may be list nodes that are common to both.
+(This may not be a bug-it may be desirable from the perspective of reducing
+memory footprint, as in the flyweight pattern, or maintaining a canonical
+form.) For example, the lists in Figure \ref{fig:overlappinglists} overlap at 
+Node D.
+
+\begin{figure}[hb]
+  \centering
+  \begin{tikzpicture}[list/.style={
+        rectangle split, 
+        rectangle split parts=2,
+        draw, 
+        rectangle split horizontal,        
+      }, 
+      >=stealth, 
+      start chain, 
+      pin edge = {
+        Straight Barb-, 
+        shorten <=1mm,semithick
+      },
+      start chain=1,
+      start chain=2
+    ]
+    \node[list,on chain=1,pin=180:L1] (A) {A};
+    \node[list,on chain=1] (B) {B};
+    \node[list,on chain=2,pin=180:L2] at (0,-1) (C) {C};
+    \node[list,on chain=2] (D) {D};
+    \node[list,on chain=2] (E) {E};
+    \node[list,on chain=2] (F) {F};
+    \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
+    \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+    \draw[*->] let \p1 = (D.two), \p2 = (D.center) in (\x1,\y2) -- (E);
+    \draw[*->] let \p1 = (E.two), \p2 = (E.center) in (\x1,\y2) -- (F);
+    \draw let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) edge[*->,in=180,out=0,looseness=5] (D.north west);
+  \end{tikzpicture}
+  \caption{Primer preklapanja listi}
+  \label{fig:overlappinglists}
+\end{figure}
+
+\textbf{Challenge:} Write a program that takes two cycle-free singly linked
+lists, and determines if there exists a node that is common to both lists.
+
+\textbf{Hint:} Solve the simple cases first.
+
+\textbf{Solution:} We can avoid the extra space by using two nested loops, one
+iterating through the first list, and the other to search the second for the
+node being processed in the first list. However, the time complexity is
+$O(n^2)$.
+
+The lists overlap if and only if both have the same tail node: once the lists
+converge at a node, they cannot diverge at a later node. Therefore, checking
+for overlap amounts to finding the tail nodes for each list.
+
+To find the first overlapping node, we first compute the length of each list.
+The first overlapping node is determined by advancing through the longer list
+by the difference in lengths, and then advancing through both lists in tandem,
+stopping at the first common node. If we reach the end of a list without
+finding a common node, the lists do not overlap.
+
+\begin{minted}[frame=lines]{python}
+def overlapping_no_cycle_lists(L1, L2):
+    def length(L):
+        length = 0 
+        while L:
+            length += 1
+            L = L.next 
+        return length
+
+    L1_len, L2_len = length(L1), length(L2) 
+    if L1_len > L2_len:
+        L1, L2 = L2, L1  # L2 is the longer list
+    # Advances the longer list to get equal length lists 
+    for _ in range(abs(L1_len - L2_len)):
+        L2 = L2.next
+
+    while L1 and L2 and L1 is not L2: 
+        L1, L2 = L1.next, L2.next
+
+    return L1  # None implies there is no overlap between L1 and L2
+\end{minted}
+
+The time complexity is $O(n)$ and the space complexity is $O(1)$.
+
+\subsection{Remove duplicates from a sorted list}
+
+This problem is concerned with removing duplicates from a sorted list of
+integers. See Figure \ref{fig:listduplicates} for an example of a list before
+and after the removal of duplicates.
+
+\begin{figure}[hb]
+  \centering
+  \begin{tikzpicture}[list/.style={
+        rectangle split, 
+        rectangle split parts=2,
+        draw, 
+        rectangle split horizontal,        
+        prefix after command={\pgfextra{\tikzset{every label/.style={
+          gray,
+          below,
+          yshift=-27,
+          scale=0.6}}}}
+      }, 
+      >=stealth, 
+      start chain, 
+      pin edge = {
+        Straight Barb-, 
+        shorten <=1mm,semithick
+      },
+      start chain=1,
+      start chain=2
+    ]
+    \node[list,on chain=1,pin=180:L,label=0x1000] (A) {2};
+    \node[list,on chain=1,label=0x2110] (B) {2};
+    \node[list,on chain=1,label=0x1830] (C) {3};
+    \node[list,on chain=1,label=0x1240] (D) {5};
+    \node[list,on chain=1,label=0x2200] (E) {7};
+    \node[list,on chain=1,label=0x1200] (F) {11};
+    \node[list,on chain=1,label=0x1354] (G) {11};
+    \draw[*->] let \p1 = (A.two), \p2 = (A.center) in (\x1,\y2) -- (B);
+    \draw[*->] let \p1 = (B.two), \p2 = (B.center) in (\x1,\y2) -- (C);
+    \draw[*->] let \p1 = (C.two), \p2 = (C.center) in (\x1,\y2) -- (D);
+    \draw[*->] let \p1 = (D.two), \p2 = (D.center) in (\x1,\y2) -- (E);
+    \draw[*->] let \p1 = (E.two), \p2 = (E.center) in (\x1,\y2) -- (F);
+    \draw[*->] let \p1 = (F.two), \p2 = (F.center) in (\x1,\y2) -- (G);
+
+    \node[list,on chain=2,pin=180:L,label=0x1000] at (0,-2) (H) {2};
+    \node[list,on chain=2,label=0x1830] (I) {3};
+    \node[list,on chain=2,label=0x1240] (J) {5};
+    \node[list,on chain=2,label=0x2200] (K) {7};
+    \node[list,on chain=2,label=0x1200] (L) {11};
+    \draw[*->] let \p1 = (H.two), \p2 = (H.center) in (\x1,\y2) -- (I);
+    \draw[*->] let \p1 = (I.two), \p2 = (I.center) in (\x1,\y2) -- (J);
+    \draw[*->] let \p1 = (J.two), \p2 = (J.center) in (\x1,\y2) -- (K);
+    \draw[*->] let \p1 = (K.two), \p2 = (K.center) in (\x1,\y2) -- (L);
+  \end{tikzpicture}
+  \caption{An example of duplicate removal}
+  \label{fig:listduplicates}
+\end{figure}
+
+\textbf{Challenge:} Write a program that takes as input a singly linked list
+of integers in sorted order, and removes duplicates from it. The list should
+be sorted.
+
+\textbf{Hint:} Focus on the successor fields which have to be updated.
+
+\textbf{Solution:} A brute-force algorithm is to create a new list, using a
+hash table to test if a value has already been added to the new list.
+Altematively, we could search in the new list itself to see if the candidate
+value already is present. If the length of the list is $n$, the first approach
+requires $O(n)$ additional space for the hash table, and the second requires
+$O(n^2)$ time to perform the lookups. Both allocate $n$ nodes for the new
+list.
+
+A better approach is to exploit the sorted nature of the list. As we traverse
+the list, we remove all successive nodes with the same value as the current
+node.
+
+\begin{minted}[frame=lines]{python}
+def remove_duplicates(L):
+    it = L
+    while it:
+        # Uses next_distinct to find the next distinct value 
+        next_distinct = it.next
+        while next_distinct and next_distinct.data == it.data:
+            next_distinct = next_distinct.next 
+        it.next = next_distinct
+        it = next_distinct
+    return L  
+\end{minted}
+
+Determining the time complexity requires a little amortized analysis. A single
+node may take more than $O(1)$ time to process if there are many successive
+nodes with the same value. A clearer justification for the time complexity is
+that each link is traversed once, so the time complexity is $O(n)$. The space
+complexity is $O(1)$.
+
+\textbf{Variant:} Let $m$ be a positive integer and $L$ a sorted singly linked
+list of integers. For each integer $k$, if $k$ appears more than $m$ times in
+$L$, remove all nodes from $L$ containing $k$.
+
+\end{document}

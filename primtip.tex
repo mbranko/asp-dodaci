@@ -1,0 +1,210 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{ifxetex}
+\RequireXeTeX
+
+\usepackage[a4paper,tmargin=1in,bmargin=1.3in,lmargin=1in,rmargin=1in]{geometry}
+
+% bookmarks in PDF
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,bookmarksopen=true]{hyperref}
+\usepackage[depth=3]{bookmark}
+% open file with zoom to page width
+\hypersetup{pdfstartview={FitH top}}
+
+% math package
+\usepackage{amsmath}
+
+% customizing fonts
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\setsansfont{Fira Sans}
+\setmonofont{JetBrains Mono NL}[Scale=0.8]
+\setmainfont{Dijakritika}
+\titleformat*{\section}{\Large\bfseries\sffamily}
+\titleformat*{\subsection}{\bfseries\sffamily}
+
+% image handling
+\usepackage{graphicx}
+\usepackage{forest}
+\usepackage{tikz}
+\usetikzlibrary{arrows,petri,topaths,arrows.meta,automata,calc,shapes.multipart,chains,shapes.gates.logic.US,matrix}
+\usepackage{tkz-berge}
+\usepackage[position=top]{subfig}
+\tikzstyle{branch}=[fill,shape=circle,minimum size=3pt,inner sep=0pt]
+
+% syntax highligting
+\usepackage{minted}
+
+% custom headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{ASP primeri}
+\cfoot{Strana \thepage}
+\setlength{\headheight}{46pt}
+
+\begin{document}
+
+\section{Primitivni tipovi}
+
+\subsection{Obrtanje redosleda bitova}
+
+\textbf{Zadatak:} Napisati program koji uzima 64-bitni neoznačeni ceo broj i
+vraća 64-bitni neoznačeni ceo broj koji se sastoji iz bita u obrnutom redosledu.
+Na primer, ako je ulaz $(1110000000000001)_2$, izlaz bi trebalo da bude
+$(1000000000000111)_2$.
+
+\textbf{Savet:} Koristiti pomoćnu tabelu.
+
+\textbf{Rešenje:} Ako je potrebno obaviti ovu operaciju samo jednom, postoji
+jednostavno rešenje grubom silom: iteracija kroz 32 manje značajna bita i zamena
+sa odgovarajućim bitom iz druge polovine ulaza.
+
+Ako će se operacija izvršavati više puta, pažljivije ćemo analizirati strukturu
+ulaza, imajući u vidu korišćenje keša. Neka se ulaz sastoji od četiri 16-bitna
+cela broja $y_3$, $y_2$, $y_1$, $y_0$ gde $y_3$ sadrži najznačajnije bitove.
+Najmanje značajnih 16 bita u obrnutom redosledu će doći iz $y_3$. Preciznije,
+ovi bitovi će se pojaviti u obrnutom redosledu u odnosu na $y_3$. Na primer, ako
+$y_3$ ima vrednost $(1110000000000001)_2$, onda će 16 najmanje značajnih bita u
+konačnom rezultatu biti $(1000000000000111)_2$.
+
+Slično računanju pariteta, vrlo brz način za obrtanje bitova u 16-bitnom celom
+broju kada izvršavamo puno ovakvih operacija je izgradnja pomoćne tabele $A$ na
+takav način da za svaki 16-bitni ceo broj $y$, $A[y]$ sadrži obrnute bite od
+$y$. Obrtanje redosleda bitova u $x$ može se obaviti obrtanjem bita u $y_0$ za
+najznačanije bite, zatim obrtanje redosleda u $y_1$, zatim u $y_2$, zatim u
+$y_3$.
+
+Ovakvo rešenje se može ilustrovati primerom obrtanja 8-bitnih celih brojeva uz
+pomoćnu tabelu sa 2-bitnim ključevima. Tabela je $rev = ((00),(10),(01),(11))$.
+Ako je ulaz $(10010011)_2$, rezultat je $rev(11),rev(00),rev(01),rev(10)$, tj.
+$(11001001)_2$.
+
+\begin{minted}[frame=lines]{python}
+def reverse-bits(x):
+    MASK_SIZE = 16
+    BIT_MASK = 0xFFFF
+    return (PRECOMPUTED_REVERSE[x & BIT_MIASK] << (3 * MASK_SIZE)
+            | PRECOMPUTED_REVERSE[(x >> MASK-SIZE) & BIT_MASK] <<
+            (2 * MASK-SIZE) |
+            PRECOMPUTED_REVERSE [(x >> (2 * MASK_SIZE)) & BIT_MASK] << MASK_SIZE
+            | PRECOMPUTED_REVERSE[(x >> (3 * MASK_SIZE)) & BIT_MASK])
+\end{minted}
+
+Vremenska složenost je $O(n/L)$, za $n$-bitne cele brojeve i $L$-bitne ključeve
+za pomoćnu tabelu.
+
+\subsection{Obrtanje redosleda cifara}
+
+\textbf{Zadatak:} Napisati program koji uzima ceo broj i vraća ceo broj koji
+sadrži dekadne cifre ulaznog broja u obrnutom redosledu. Na primer, obrtanjem 42
+dobija se 24, a obrtanjem -314 dobija se -413.
+
+\textbf{Savet:} Kako biste rešili problem ako bi ulaz bio prikazan kao string?
+
+\textbf{Rešenje:} Pristup grubom silom bio bi konverzija ulaza u string, zatim
+obrtanje znakova u stringu. Na primer, $(1100)_2$ je dekadni broj $12$,
+a rezultat za $(1100)_2$ se može dobiti iteracijom kroz "12" u obrnutom
+redosledu.
+
+Detaljnija analiza pokazuje da se može izbeći formiranje stringa. Posmatrajmo
+ulaz 1132. Prva cifra rezultata je 2, koja se može dobiti kao ostatak deljenja
+ulaza sa 10. Preostale cifre se dobijaju od međurezultata 1132/10 = 113.
+Uopšteno, neka je ulaz $k$. Ako je $k \geq 0$, onda $k \pmod{10}$ je
+najznačajnija cifra rezultata a preostale cifre su rezultat obrtanja za $k/10$.
+Nastavljajući sa primerom, iterativno ažuriramo međurezultat i ulaz kao 2 i 113,
+zatim 23 i 11, zatim 231 i 1, zatim 2311.
+
+U opštem slučaju za $k$, zapamtićemo znak, rešiti problem za $|k|$, i dodati
+znak na kraju.
+
+\begin{minted}[frame=lines]{python}
+def reverse(x):
+    result, x_remaining = 0, abs(x)
+    while x_remaining:
+        result = result * 10 + x_remaining % 10
+        x_remaining //= 10
+    return -result if x < 0 else result
+\end{minted}
+
+Vremenska složenost je $O(n)$, gde je $n$ broj dekadnih cifara u $k$.
+
+\subsection{Presek pravougaonika}
+
+Ovaj problem se odnosi na pravougaonike čije stranice su paralelne sa X i Y
+osama. Slika \ref{fig:rectangles} ilustruje ove situacije.
+
+\textbf{Zadatak:} Napisati program koji proverava da li dva pravougaonika imaju
+neprazan presek. Ako imaju, vraća pravougaonik koji predstavlja njihov presek. 
+
+\textbf{Savet:} Razmišljajte nezavisno o X i Y dimenzijama.
+
+\textbf{Rešenje:} Kako zadatak to nije definisao, tretiraćemo stranicu kao deo
+pravougaonika. To znači da, na primer, pravougaonici na slici
+\ref{fig:rectangles} imaju presek.
+
+\begin{figure}[hb]
+\centering
+\begin{tikzpicture}[scale=.75]
+  \draw (0,0) rectangle (1,1) node[pos=.5] {A};
+  \draw (1,1) rectangle (6,4) node[pos=.5] {B};
+  \draw (4,0) rectangle (5,5) node[pos=.5] {C};
+  \draw (7,0) rectangle (10,3.5) node[pos=.5] {D};
+  \draw (10,0) rectangle (11,2) node[pos=.5] {E};
+  \draw (9,3) rectangle (15,4) node[pos=.5] {F};
+  \draw (13,3.1) rectangle (14,3.9) node[pos=.5] {G};
+  \draw (14.5,2.5) rectangle (17,5) node[pos=.5] {H};
+  \draw (17,2.5) rectangle (18,5) node[pos=.5] {I};
+  \draw (17,1) rectangle (17.5,3) node[pos=.5] {J};
+\end{tikzpicture}
+\caption{Primeri XY-poravnatih pravougaonika}
+\label{fig:rectangles}
+\end{figure}
+
+Ima puno načina kako se ovakvi pravougaonici mogu presecati. Na primer, mogu
+imati delimično preklapanje ($D$ i $F$), jedan sadrži drugi ($F$ i $G$), mogu
+deliti zajedničku stranicu ($D$ i $E$), mogu deliti zajedničko teme ($A$ i $B$),
+mogu formirati krst ($B$ i $C$), ili oblik slova T ($F$ i $H$), itd. Mogućih
+slučajeva ima zaista puno.
+
+Bolji pristup je da se fokusira na uslove pod kojima je garantovano da se
+pravougaonici ne seku. Na primer, pravougaonik sa temenom u levom donjem uglu
+(1,2), širinom 3 i visinom 4 ne može se seći sa pravougaonikom čije teme u
+donjem levom uglu je (5,3), širina 2 i visina 4, jer su vrednosti X koordinata
+tačaka prvog pravougaonika u opsegu od 1 do 4 (uključivo) a X koordinate tačaka
+drugog u opsegu od 5 do 7 (uključivo).
+
+Slično tome, ako se Y koordinate tačaka prvog pravougaonika ne seku sa Y
+koordinatama tačaka drugog, dva pravougaonika se ne seku.
+
+Ekvivalentno tome, ako se opsezi X koordinata seku i opsezi Y koordinata seku,
+sve tačke u tim presecima opsega pripadaju pravougaoniku koji predstavlja
+neprazan presek.
+
+\begin{minted}[frame=lines]{python}
+Rectangle = collections.namedtuple('Rectangle', ('x', 'y', 'width', 'height'))
+
+def intersect_rectangle(Rl, R2): 
+    def is_intersect(R1, R2) :
+        return (R1.x <= R2.x + R2.width and R1.x + R1.width >= R2.x
+                and R1.y <= R2.y + R2.height and R1.y + R1.height >= R2.y)
+
+    if not is_intersect(R1, R2):
+        return Rectangle(0, 0, -1, -1) # No intersection.
+    return Rectangle(
+        max(R1.x, R2.x),
+        max(R1.y, R2.y),
+        min(R1.x + R1.width, R2.x + R2.width) - max(R1.x, R2.x), 
+        min(R1.y + R1.height, R2.y + R2.height) - max(R1.y, R2.y))
+\end{minted}
+
+Vremenska složenost je $O(1)$, jer je broj operacija konstantan.
+
+\textbf{Varijanta:} Ako su date četiri tačke u ravni, kako proveriti da li one
+formiraju temena pravougaonika?
+
+\textbf{Varijanta:} Kako proveriti da li se dva pravougaonika, čije stranice ne
+moraju biti paralelne sa osama, seku? 
+
+\end{document}
